@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Staff Dashboard — Clinic</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/staff.css" />
+</head>
+<body class="staff-body">
+
+  <!-- ── Login ─────────────────────────────────────────────────── -->
+  <section id="login-section" class="login-section" style="display:none;">
+    <div class="login-card">
+      <h1>Staff Login</h1>
+      <form id="login-form">
+        <label for="login-email">Email</label>
+        <input id="login-email" type="email" autocomplete="username" required />
+
+        <label for="login-password">Password</label>
+        <input id="login-password" type="password" autocomplete="current-password" required />
+
+        <p id="login-error" class="login-error" aria-live="polite"></p>
+        <button type="submit" class="btn btn-primary btn-full">Sign In</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- ── Dashboard ─────────────────────────────────────────────── -->
+  <section id="dashboard-section" style="display:none;">
+
+    <header class="dash-header">
+      <h1>Staff Dashboard</h1>
+      <button id="logout-btn" class="btn btn-ghost">Log out</button>
+    </header>
+
+    <!-- Live Status -->
+    <div class="status-bar">
+      <div class="status-item">
+        <span class="status-label">Patients in queue</span>
+        <span id="queue-count" class="status-value">—</span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">Wait time</span>
+        <span id="wait-mins" class="status-value">—</span>
+        <span class="status-unit">min</span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">Last updated</span>
+        <span id="last-updated" class="status-meta">—</span>
+      </div>
+    </div>
+
+    <!-- Tally Controls -->
+    <div class="controls-section">
+      <button id="add-patient-btn" class="btn btn-tally btn-add">
+        <span class="tally-icon">+</span>
+        New Arrival
+      </button>
+      <button id="remove-patient-btn" class="btn btn-tally btn-remove">
+        <span class="tally-icon">−</span>
+        Patient Seen / Left
+      </button>
+    </div>
+
+    <!-- Manual Wait Override -->
+    <div class="override-section">
+      <h2>Set wait time manually</h2>
+      <div class="override-row">
+        <input
+          id="override-input"
+          type="number"
+          min="0"
+          max="999"
+          placeholder="e.g. 20"
+          class="override-input"
+        />
+        <span class="override-unit">minutes</span>
+        <button id="set-wait-btn" class="btn btn-primary">Set</button>
+      </div>
+    </div>
+
+    <!-- Open / Closed Override -->
+    <div class="override-section">
+      <h2>Override clinic status</h2>
+      <div class="status-toggle-row">
+        <button id="open-override-btn" class="btn btn-open">Force Open</button>
+        <button id="closed-override-btn" class="btn btn-closed">Force Closed</button>
+        <button id="clear-override-btn" class="btn btn-ghost">Use Schedule</button>
+      </div>
+    </div>
+
+    <!-- Settings -->
+    <div class="settings-section">
+      <button id="settings-toggle-btn" class="btn btn-ghost">⚙ Settings</button>
+
+      <div id="settings-panel" style="display:none;" class="settings-panel">
+
+        <div class="setting-row">
+          <label for="clinic-name-input">Clinic name</label>
+          <input id="clinic-name-input" type="text" placeholder="My Clinic" />
+        </div>
+
+        <div class="setting-row">
+          <label for="avg-minutes-input">Avg minutes per patient</label>
+          <input id="avg-minutes-input" type="number" min="1" max="120" value="10" />
+        </div>
+
+        <div class="setting-row">
+          <label for="tz-input">Timezone</label>
+          <input id="tz-input" type="text" placeholder="America/Chicago" />
+          <small>Use IANA format, e.g. America/New_York, America/Los_Angeles</small>
+        </div>
+
+        <h3>Operating Hours</h3>
+        <div id="hours-grid" class="hours-grid"></div>
+
+        <button id="save-settings-btn" class="btn btn-primary">Save Settings</button>
+        <p id="settings-saved-msg" style="display:none;" class="saved-msg">Settings saved!</p>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- Supabase CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- App scripts -->
+  <script src="js/config.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/hours.js"></script>
+  <script src="js/staff.js"></script>
+</body>
+</html>

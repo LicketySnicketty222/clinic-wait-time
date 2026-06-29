@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Clinic Wait Time</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body class="patient-body">
+
+  <header class="site-header">
+    <img src="assets/logo.png" alt="Clinic logo" class="logo" onerror="this.style.display='none'" />
+    <h1 id="clinic-name">Our Clinic</h1>
+  </header>
+
+  <main class="patient-main">
+
+    <!-- Wait time card (shown when clinic is open) -->
+    <div id="wait-card" class="wait-card">
+      <p class="card-eyebrow">Current estimated wait</p>
+
+      <div class="wait-display">
+        <span id="wait-minutes" class="wait-number" style="display:none;"></span>
+        <span id="wait-label" class="wait-unit" style="display:none;">min</span>
+        <p id="no-wait" class="no-wait-msg" style="display:none;">
+          No wait time right now
+        </p>
+      </div>
+
+      <p id="last-updated" class="last-updated"></p>
+    </div>
+
+    <!-- Closed banner (shown when clinic is outside operating hours) -->
+    <div id="closed-banner" class="closed-banner" style="display:none;">
+      <span class="closed-icon">🏥</span>
+      <p id="closed-msg" class="closed-msg">Clinic is currently closed.</p>
+    </div>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>Information updates automatically &mdash; no refresh needed</p>
+  </footer>
+
+  <!-- Supabase CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- App scripts (order matters) -->
+  <script src="js/config.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/hours.js"></script>
+  <script src="js/patient.js"></script>
+</body>
+</html>

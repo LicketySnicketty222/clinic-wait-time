@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PIN Test</title>
+  <style>
+    body { font-family: sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #f0f4f8; }
+    .box { background: white; padding: 2rem; border-radius: 1rem; box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center; width: 280px; }
+    input { width: 100%; padding: 0.75rem; font-size: 1.5rem; text-align: center; letter-spacing: 0.5rem; border: 2px solid #ccc; border-radius: 0.5rem; margin: 1rem 0; box-sizing: border-box; }
+    button { width: 100%; padding: 0.75rem; background: #0d7a6e; color: white; border: none; border-radius: 0.5rem; font-size: 1rem; font-weight: bold; cursor: pointer; }
+    #msg { margin-top: 1rem; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2>Staff PIN Test</h2>
+    <input id="pin" type="password" inputmode="numeric" placeholder="••••" />
+    <button onclick="check()">Enter</button>
+    <p id="msg"></p>
+  </div>
+
+  <script>
+    const CORRECT_PIN = '1234';
+
+    function check() {
+      const entered = document.getElementById('pin').value;
+      const msg = document.getElementById('msg');
+      if (entered === CORRECT_PIN) {
+        msg.style.color = 'green';
+        msg.textContent = 'PIN correct! JavaScript is working.';
+      } else {
+        msg.style.color = 'red';
+        msg.textContent = 'Wrong PIN. Try: 1234';
+        document.getElementById('pin').value = '';
+      }
+    }
+
+    document.getElementById('pin').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') check();
+    });
+  </script>
+</body>
+</html>

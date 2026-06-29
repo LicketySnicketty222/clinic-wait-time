@@ -3,134 +3,545 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Staff Dashboard — Clinic</title>
-  <link rel="stylesheet" href="css/style.css" />
-  <link rel="stylesheet" href="css/staff.css" />
+  <title>Staff Dashboard</title>
+  <style>
+    :root {
+      --teal:    #0d7a6e;
+      --navy:    #0a3d54;
+      --mint:    #e8f7f5;
+      --bg:      #f4f8fb;
+      --white:   #ffffff;
+      --muted:   #6b8090;
+      --red:     #c0392b;
+      --green:   #27ae60;
+      --border:  #d0dce6;
+      --shadow:  0 4px 24px rgba(13,122,110,0.10);
+      --radius:  1.1rem;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      min-height: 100%;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--navy);
+    }
+
+    /* ── Login ── */
+    #login-view {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .login-box {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 2.5rem 2rem;
+      width: 100%;
+      max-width: 340px;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      text-align: center;
+    }
+    .login-box h1 { font-size: 1.5rem; color: var(--navy); }
+    .login-box p  { font-size: 0.9rem; color: var(--muted); }
+    .pin-input {
+      width: 100%;
+      padding: 1rem;
+      font-size: 2rem;
+      text-align: center;
+      letter-spacing: 0.5rem;
+      border: 2px solid var(--border);
+      border-radius: 0.6rem;
+      outline: none;
+      background: var(--white);
+    }
+    .pin-input:focus { border-color: var(--teal); }
+    .error-msg { color: var(--red); font-size: 0.875rem; min-height: 1.2em; }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      gap: 0.4rem; padding: 0.7rem 1.25rem;
+      border: none; border-radius: 0.6rem;
+      font-family: inherit; font-size: 1rem; font-weight: 600;
+      cursor: pointer; transition: opacity 0.15s, transform 0.1s;
+      white-space: nowrap;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary  { background: var(--teal);  color: #fff; }
+    .btn-primary:hover  { opacity: 0.9; }
+    .btn-outline  { background: transparent; color: var(--navy); border: 2px solid var(--navy); }
+    .btn-outline:hover  { background: var(--mint); }
+    .btn-ghost    { background: transparent; color: var(--muted); border: 1.5px solid var(--border); }
+    .btn-ghost:hover    { background: #eef2f6; }
+    .btn-green    { background: var(--green); color: #fff; }
+    .btn-green:hover    { opacity: 0.9; }
+    .btn-red      { background: var(--red);   color: #fff; }
+    .btn-red:hover      { opacity: 0.9; }
+    .btn-full { width: 100%; }
+
+    /* ── Dashboard ── */
+    #dash-view { display: none; max-width: 600px; margin: 0 auto; padding: 0 1rem 4rem; }
+
+    .dash-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.5rem 0 1rem;
+      border-bottom: 2px solid var(--mint);
+      margin-bottom: 1.5rem;
+    }
+    .dash-header h1 { font-size: 1.3rem; font-weight: 700; }
+
+    /* Status cards */
+    .status-row { display: flex; gap: 0.75rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+    .stat-card {
+      flex: 1; min-width: 110px;
+      background: var(--white); border-radius: var(--radius);
+      box-shadow: var(--shadow); padding: 1rem;
+      display: flex; flex-direction: column; gap: 0.2rem;
+    }
+    .stat-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); }
+    .stat-value { font-size: 2.2rem; font-weight: 800; color: var(--teal); line-height: 1; }
+    .stat-unit  { font-size: 0.85rem; color: var(--muted); }
+    .stat-meta  { font-size: 0.95rem; font-weight: 600; }
+
+    /* Tally */
+    .tally-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1.25rem; }
+    .btn-tally {
+      padding: 1.5rem 1rem; font-size: 1rem; border-radius: 1rem;
+      flex-direction: column; gap: 0.3rem;
+    }
+    .tally-icon { font-size: 2rem; font-weight: 800; line-height: 1; }
+
+    /* Sections */
+    .section {
+      background: var(--white); border-radius: var(--radius);
+      box-shadow: var(--shadow); padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+    .section-title {
+      font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.07em; color: var(--muted); margin-bottom: 0.875rem;
+    }
+
+    /* Override row */
+    .override-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .num-input {
+      width: 6rem; padding: 0.6rem 0.75rem;
+      border: 1.5px solid var(--border); border-radius: 0.5rem;
+      font-size: 1rem; font-family: inherit;
+    }
+    .num-input:focus { outline: none; border-color: var(--teal); }
+    .unit-label { color: var(--muted); font-size: 0.9rem; }
+
+    /* Status toggle */
+    .toggle-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+    /* Settings */
+    .setting-group { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 0.875rem; }
+    .setting-label { font-size: 0.85rem; font-weight: 600; color: var(--navy); }
+    .setting-input {
+      width: 100%; padding: 0.6rem 0.75rem;
+      border: 1.5px solid var(--border); border-radius: 0.5rem;
+      font-size: 1rem; font-family: inherit;
+    }
+    .setting-input:focus { outline: none; border-color: var(--teal); }
+    .setting-hint { font-size: 0.75rem; color: var(--muted); }
+    .hours-row {
+      display: flex; align-items: center; gap: 0.5rem;
+      flex-wrap: wrap; margin-bottom: 0.4rem;
+    }
+    .hours-day { width: 85px; font-size: 0.85rem; font-weight: 600; flex-shrink: 0; }
+    .time-input {
+      width: 110px; padding: 0.4rem 0.5rem;
+      border: 1.5px solid var(--border); border-radius: 0.4rem;
+      font-size: 0.9rem; font-family: inherit;
+    }
+    .time-input:focus { outline: none; border-color: var(--teal); }
+    .saved-msg { color: var(--green); font-weight: 600; font-size: 0.9rem; margin-top: 0.5rem; }
+
+    /* DB error banner */
+    .db-error {
+      background: #fdecea; border: 1.5px solid var(--red);
+      border-radius: 0.6rem; padding: 0.75rem 1rem;
+      color: var(--red); font-size: 0.875rem; margin-bottom: 1rem;
+      display: none;
+    }
+
+    @media (max-width: 480px) {
+      .tally-row { grid-template-columns: 1fr; }
+      .status-row { flex-direction: column; }
+    }
+  </style>
 </head>
-<body class="staff-body">
+<body>
 
-  <!-- ── Login ─────────────────────────────────────────────────── -->
-  <section id="login-section" class="login-section">
-    <div class="login-card">
+  <!-- ── LOGIN ──────────────────────────────────────────────────── -->
+  <div id="login-view">
+    <div class="login-box">
       <h1>Staff Login</h1>
-      <div class="login-form-wrap">
-        <label for="staff-pin">Enter PIN</label>
-        <input
-          id="staff-pin"
-          type="password"
-          inputmode="numeric"
-          placeholder="••••"
-          autocomplete="off"
-        />
-        <p id="login-error" class="login-error" aria-live="polite"></p>
-        <button type="button" class="btn btn-primary btn-full" onclick="handleLogin()">Sign In</button>
-      </div>
+      <p>Enter your staff PIN to access the dashboard</p>
+      <input
+        id="pin-input"
+        class="pin-input"
+        type="password"
+        inputmode="numeric"
+        maxlength="10"
+        placeholder="••••"
+        autocomplete="off"
+      />
+      <p id="pin-error" class="error-msg"></p>
+      <button class="btn btn-primary btn-full" id="login-btn">Sign In</button>
     </div>
-  </section>
+  </div>
 
-  <!-- ── Dashboard ─────────────────────────────────────────────── -->
-  <section id="dashboard-section" style="display:none;">
+  <!-- ── DASHBOARD ──────────────────────────────────────────────── -->
+  <div id="dash-view">
 
-    <header class="dash-header">
+    <div class="dash-header">
       <h1>Staff Dashboard</h1>
-      <button id="logout-btn" class="btn btn-ghost">Log out</button>
-    </header>
+      <button class="btn btn-ghost" id="logout-btn">Log out</button>
+    </div>
+
+    <div id="db-error" class="db-error">
+      Cannot reach the database. Check your internet connection.
+    </div>
 
     <!-- Live Status -->
-    <div class="status-bar">
-      <div class="status-item">
-        <span class="status-label">Patients in queue</span>
-        <span id="queue-count" class="status-value">—</span>
+    <div class="status-row">
+      <div class="stat-card">
+        <span class="stat-label">In Queue</span>
+        <span class="stat-value" id="stat-queue">—</span>
+        <span class="stat-unit">patients</span>
       </div>
-      <div class="status-item">
-        <span class="status-label">Wait time</span>
-        <span id="wait-mins" class="status-value">—</span>
-        <span class="status-unit">min</span>
+      <div class="stat-card">
+        <span class="stat-label">Wait Time</span>
+        <span class="stat-value" id="stat-wait">—</span>
+        <span class="stat-unit">minutes</span>
       </div>
-      <div class="status-item">
-        <span class="status-label">Last updated</span>
-        <span id="last-updated" class="status-meta">—</span>
+      <div class="stat-card">
+        <span class="stat-label">Last Updated</span>
+        <span class="stat-meta" id="stat-time">—</span>
       </div>
     </div>
 
-    <!-- Tally Controls -->
-    <div class="controls-section">
-      <button id="add-patient-btn" class="btn btn-tally btn-add">
+    <!-- Tally Buttons -->
+    <div class="tally-row">
+      <button class="btn btn-primary btn-tally" id="btn-add">
         <span class="tally-icon">+</span>
         New Arrival
       </button>
-      <button id="remove-patient-btn" class="btn btn-tally btn-remove">
+      <button class="btn btn-outline btn-tally" id="btn-remove">
         <span class="tally-icon">−</span>
         Patient Seen / Left
       </button>
     </div>
 
-    <!-- Manual Wait Override -->
-    <div class="override-section">
-      <h2>Set wait time manually</h2>
+    <!-- Manual Override -->
+    <div class="section">
+      <p class="section-title">Set Wait Time Manually</p>
       <div class="override-row">
-        <input
-          id="override-input"
-          type="number"
-          min="0"
-          max="999"
-          placeholder="e.g. 20"
-          class="override-input"
-        />
-        <span class="override-unit">minutes</span>
-        <button id="set-wait-btn" class="btn btn-primary">Set</button>
+        <input class="num-input" id="manual-input" type="number" min="0" max="999" placeholder="e.g. 20" />
+        <span class="unit-label">minutes</span>
+        <button class="btn btn-primary" id="btn-set-wait">Set</button>
+        <button class="btn btn-ghost"   id="btn-clear-wait">Clear (set to 0)</button>
       </div>
     </div>
 
     <!-- Open / Closed Override -->
-    <div class="override-section">
-      <h2>Override clinic status</h2>
-      <div class="status-toggle-row">
-        <button id="open-override-btn" class="btn btn-open">Force Open</button>
-        <button id="closed-override-btn" class="btn btn-closed">Force Closed</button>
-        <button id="clear-override-btn" class="btn btn-ghost">Use Schedule</button>
+    <div class="section">
+      <p class="section-title">Clinic Status Override</p>
+      <div class="toggle-row">
+        <button class="btn btn-green" id="btn-force-open">Force Open</button>
+        <button class="btn btn-red"   id="btn-force-closed">Force Closed</button>
+        <button class="btn btn-ghost" id="btn-use-schedule">Use Schedule</button>
       </div>
     </div>
 
     <!-- Settings -->
-    <div class="settings-section">
-      <button id="settings-toggle-btn" class="btn btn-ghost">⚙ Settings</button>
+    <div class="section">
+      <p class="section-title">
+        Settings
+        <button class="btn btn-ghost" id="btn-toggle-settings"
+          style="font-size:0.75rem;padding:0.2rem 0.6rem;margin-left:0.5rem;">
+          Show / Hide
+        </button>
+      </p>
+      <div id="settings-body" style="display:none;">
 
-      <div id="settings-panel" style="display:none;" class="settings-panel">
-
-        <div class="setting-row">
-          <label for="clinic-name-input">Clinic name</label>
-          <input id="clinic-name-input" type="text" placeholder="My Clinic" />
+        <div class="setting-group">
+          <label class="setting-label" for="s-name">Clinic Name</label>
+          <input class="setting-input" id="s-name" type="text" placeholder="My Clinic" />
         </div>
 
-        <div class="setting-row">
-          <label for="avg-minutes-input">Avg minutes per patient</label>
-          <input id="avg-minutes-input" type="number" min="1" max="120" value="10" />
+        <div class="setting-group">
+          <label class="setting-label" for="s-avg">Avg. minutes per patient</label>
+          <input class="setting-input" id="s-avg" type="number" min="1" max="120" />
         </div>
 
-        <div class="setting-row">
-          <label for="tz-input">Timezone</label>
-          <input id="tz-input" type="text" placeholder="America/Chicago" />
-          <small>Use IANA format, e.g. America/New_York, America/Los_Angeles</small>
+        <div class="setting-group">
+          <label class="setting-label" for="s-tz">Timezone</label>
+          <input class="setting-input" id="s-tz" type="text" placeholder="America/Chicago" />
+          <span class="setting-hint">Examples: America/New_York, America/Los_Angeles, America/Chicago</span>
         </div>
 
-        <h3>Operating Hours</h3>
-        <div id="hours-grid" class="hours-grid"></div>
+        <p class="setting-label" style="margin-bottom:0.5rem;">Operating Hours</p>
+        <div id="hours-grid"></div>
 
-        <button id="save-settings-btn" class="btn btn-primary">Save Settings</button>
-        <p id="settings-saved-msg" style="display:none;" class="saved-msg">Settings saved!</p>
+        <button class="btn btn-primary" id="btn-save-settings" style="margin-top:0.75rem;">
+          Save Settings
+        </button>
+        <p class="saved-msg" id="saved-msg" style="display:none;">Saved!</p>
+
       </div>
     </div>
 
-  </section>
+  </div><!-- end dash-view -->
 
-  <!-- Supabase CDN (pinned version) -->
+  <!-- Config -->
+  <script src="js/config.js"></script>
+
+  <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.js"></script>
 
-  <!-- App scripts -->
-  <script src="js/config.js"></script>
-  <script src="js/supabase.js"></script>
-  <script src="js/hours.js"></script>
-  <script src="js/staff.js"></script>
+  <script>
+    // ── Supabase client ───────────────────────────────────────────
+    const db = (window.supabase && typeof window.supabase.createClient === 'function')
+      ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+      : null;
+
+    // ── State ─────────────────────────────────────────────────────
+    let status = { current_wait_minutes: 0, patients_in_queue: 0, is_open_override: null, id: null };
+    let config = { avg_minutes_per_patient: 10, operating_hours: {}, timezone: '', clinic_name: '', id: null };
+    let pollTimer = null;
+
+    // ── DOM refs ──────────────────────────────────────────────────
+    const loginView  = document.getElementById('login-view');
+    const dashView   = document.getElementById('dash-view');
+    const pinInput   = document.getElementById('pin-input');
+    const pinError   = document.getElementById('pin-error');
+    const dbError    = document.getElementById('db-error');
+    const statQueue  = document.getElementById('stat-queue');
+    const statWait   = document.getElementById('stat-wait');
+    const statTime   = document.getElementById('stat-time');
+
+    // ── Login ─────────────────────────────────────────────────────
+    function doLogin() {
+      const entered = pinInput.value;
+      if (!entered) { pinError.textContent = 'Please enter your PIN.'; return; }
+      if (entered === String(STAFF_PIN)) {
+        pinError.textContent = '';
+        sessionStorage.setItem('staff_ok', '1');
+        openDashboard();
+      } else {
+        pinError.textContent = 'Incorrect PIN. Please try again.';
+        pinInput.value = '';
+        pinInput.focus();
+      }
+    }
+
+    document.getElementById('login-btn').addEventListener('click', doLogin);
+    pinInput.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+    document.getElementById('logout-btn').addEventListener('click', () => {
+      sessionStorage.removeItem('staff_ok');
+      clearInterval(pollTimer);
+      dashView.style.display = 'none';
+      loginView.style.display = 'flex';
+      pinInput.value = '';
+    });
+
+    // ── Open dashboard ────────────────────────────────────────────
+    async function openDashboard() {
+      loginView.style.display = 'none';
+      dashView.style.display  = 'block';
+      if (!db) { showDbError(); return; }
+      await loadAll();
+      pollTimer = setInterval(loadStatus, 15_000);
+    }
+
+    function showDbError() {
+      dbError.style.display = 'block';
+    }
+
+    // ── Load data ─────────────────────────────────────────────────
+    async function loadAll() {
+      await Promise.all([loadConfig(), loadStatus()]);
+      buildHoursGrid();
+    }
+
+    async function loadConfig() {
+      try {
+        const { data } = await db.from('clinic_config').select('*').single();
+        if (data) {
+          config = data;
+          document.getElementById('s-name').value = data.clinic_name || '';
+          document.getElementById('s-avg').value  = data.avg_minutes_per_patient || 10;
+          document.getElementById('s-tz').value   = data.timezone || '';
+        }
+      } catch (e) { console.error('loadConfig:', e); }
+    }
+
+    async function loadStatus() {
+      try {
+        const { data } = await db.from('clinic_status').select('*')
+          .order('last_updated', { ascending: false }).limit(1).single();
+        if (data) { status = data; renderStatus(); }
+      } catch (e) { console.error('loadStatus:', e); }
+    }
+
+    function renderStatus() {
+      statQueue.textContent = status.patients_in_queue ?? 0;
+      statWait.textContent  = status.current_wait_minutes ?? 0;
+      if (status.last_updated) {
+        const d = new Date(status.last_updated);
+        statTime.textContent = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+      }
+    }
+
+    // ── Write helper ──────────────────────────────────────────────
+    async function writeStatus(fields) {
+      if (!db) { showDbError(); return; }
+      try {
+        const payload = { ...fields, last_updated: new Date().toISOString() };
+        if (status.id) {
+          await db.from('clinic_status').update(payload).eq('id', status.id);
+        } else {
+          const { data } = await db.from('clinic_status').insert(payload).select().single();
+          if (data) status.id = data.id;
+        }
+        status = { ...status, ...payload };
+        renderStatus();
+      } catch (e) {
+        console.error('writeStatus:', e);
+        showDbError();
+      }
+    }
+
+    // ── Tally ─────────────────────────────────────────────────────
+    document.getElementById('btn-add').addEventListener('click', () => {
+      const avg = config.avg_minutes_per_patient || 10;
+      const q   = Math.max(0, (status.patients_in_queue || 0) + 1);
+      writeStatus({ patients_in_queue: q, current_wait_minutes: q * avg });
+    });
+
+    document.getElementById('btn-remove').addEventListener('click', () => {
+      const avg = config.avg_minutes_per_patient || 10;
+      const q   = Math.max(0, (status.patients_in_queue || 0) - 1);
+      writeStatus({ patients_in_queue: q, current_wait_minutes: q * avg });
+    });
+
+    // ── Manual wait ───────────────────────────────────────────────
+    document.getElementById('btn-set-wait').addEventListener('click', () => {
+      const val = parseInt(document.getElementById('manual-input').value, 10);
+      if (!isNaN(val) && val >= 0) {
+        writeStatus({ current_wait_minutes: val });
+        document.getElementById('manual-input').value = '';
+      }
+    });
+
+    document.getElementById('btn-clear-wait').addEventListener('click', () => {
+      writeStatus({ current_wait_minutes: 0, patients_in_queue: 0 });
+    });
+
+    // ── Status override ───────────────────────────────────────────
+    document.getElementById('btn-force-open').addEventListener('click',   () => writeStatus({ is_open_override: true }));
+    document.getElementById('btn-force-closed').addEventListener('click', () => writeStatus({ is_open_override: false }));
+    document.getElementById('btn-use-schedule').addEventListener('click', () => writeStatus({ is_open_override: null }));
+
+    // ── Settings toggle ───────────────────────────────────────────
+    document.getElementById('btn-toggle-settings').addEventListener('click', () => {
+      const b = document.getElementById('settings-body');
+      b.style.display = b.style.display === 'none' ? 'block' : 'none';
+    });
+
+    // ── Hours grid ────────────────────────────────────────────────
+    const DAYS = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
+
+    function buildHoursGrid() {
+      const grid = document.getElementById('hours-grid');
+      grid.innerHTML = '';
+      DAYS.forEach(day => {
+        const h = config.operating_hours?.[day];
+        const row = document.createElement('div');
+        row.className = 'hours-row';
+
+        const lbl = document.createElement('span');
+        lbl.className = 'hours-day';
+        lbl.textContent = day.charAt(0).toUpperCase() + day.slice(1);
+
+        const openIn  = document.createElement('input');
+        openIn.className = 'time-input'; openIn.type = 'time';
+        openIn.dataset.day = day; openIn.dataset.field = 'open';
+        openIn.value = h?.open || '';
+
+        const closeIn = document.createElement('input');
+        closeIn.className = 'time-input'; closeIn.type = 'time';
+        closeIn.dataset.day = day; closeIn.dataset.field = 'close';
+        closeIn.value = h?.close || '';
+
+        const cb = document.createElement('input');
+        cb.type = 'checkbox'; cb.id = `cb-${day}`;
+        cb.checked = !h?.open;
+        cb.addEventListener('change', () => {
+          openIn.disabled = cb.checked;
+          closeIn.disabled = cb.checked;
+        });
+        openIn.disabled = cb.checked;
+        closeIn.disabled = cb.checked;
+
+        const cbLbl = document.createElement('label');
+        cbLbl.htmlFor = `cb-${day}`;
+        cbLbl.textContent = 'Closed';
+        cbLbl.style.fontSize = '0.85rem';
+
+        row.append(lbl, openIn, document.createTextNode('–'), closeIn, cb, cbLbl);
+        grid.appendChild(row);
+      });
+    }
+
+    // ── Save settings ─────────────────────────────────────────────
+    document.getElementById('btn-save-settings').addEventListener('click', async () => {
+      if (!db) { showDbError(); return; }
+      const hours = {};
+      DAYS.forEach(day => {
+        const closed = document.getElementById(`cb-${day}`)?.checked;
+        hours[day] = closed ? { open: null, close: null } : {
+          open:  document.querySelector(`input[data-day="${day}"][data-field="open"]`)?.value  || null,
+          close: document.querySelector(`input[data-day="${day}"][data-field="close"]`)?.value || null,
+        };
+      });
+
+      const payload = {
+        operating_hours:         hours,
+        timezone:                document.getElementById('s-tz').value.trim()  || 'America/Chicago',
+        avg_minutes_per_patient: parseInt(document.getElementById('s-avg').value, 10) || 10,
+        clinic_name:             document.getElementById('s-name').value.trim() || '',
+      };
+
+      try {
+        if (config.id) {
+          await db.from('clinic_config').update(payload).eq('id', config.id);
+        } else {
+          await db.from('clinic_config').insert(payload);
+        }
+        config = { ...config, ...payload };
+        const msg = document.getElementById('saved-msg');
+        msg.style.display = 'block';
+        setTimeout(() => (msg.style.display = 'none'), 2500);
+      } catch (e) {
+        console.error('saveSettings:', e);
+        showDbError();
+      }
+    });
+
+    // ── Boot ──────────────────────────────────────────────────────
+    if (sessionStorage.getItem('staff_ok') === '1') {
+      openDashboard();
+    }
+  </script>
 </body>
 </html>

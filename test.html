@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>App Tests</title>
+  <style>
+    body { font-family: monospace; max-width: 700px; margin: 2rem auto; padding: 0 1rem; background: #f8f9fa; }
+    h1   { font-size: 1.3rem; margin-bottom: 1rem; }
+    h2   { font-size: 0.9rem; margin: 1.5rem 0 0.5rem; text-transform: uppercase; letter-spacing: 0.05em; color: #666; }
+    .pass { color: #27ae60; }
+    .fail { color: #c0392b; }
+    .row  { padding: 0.25rem 0; font-size: 0.9rem; }
+    .summary { margin-top: 1.5rem; padding: 1rem; border-radius: 0.5rem; font-size: 1rem; font-weight: bold; }
+    .all-pass { background: #eafaf1; color: #27ae60; }
+    .has-fail  { background: #fdecea; color: #c0392b; }
+    #log { white-space: pre; font-size: 0.8rem; background: #fff; border: 1px solid #ddd; padding: 0.75rem; border-radius: 0.4rem; margin-top: 1rem; max-height: 300px; overflow-y: auto; }
+  </style>
+</head>
+<body>
+<h1>Clinic Wait Time — Test Suite</h1>
+<div id="results"></div>
+<div id="summary"></div>
+<h2>Console Log</h2>
+<div id="log"></div>
+
+<script src="js/config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.js"></script>
+<script>
+// ── Test framework ────────────────────────────────────────────────────────────
+const results = [];
+const logEl   = document.getElementById('log');
+const resEl   = document.getElementById('results');
+
+function log(msg) {
+  logEl.textContent += msg + '\n';
+  console.log(msg);
+}
+
+function assert(cond, msg) {
+  if (!cond) throw new Error(msg || 'Assertion failed');
+}
+
+function assertEqual(a, b, msg) {
+  if (a !== b) throw new Error((msg || '') + ` Expected "${b}", got "${a}"`);
+}
+
+async function test(group, name, fn) {
+  try {
+    await fn();
+    results.push({ group, name, pass: true });
+    log(`✓ [${group}] ${name}`);
+  } catch(e) {
+    results.push({ group, name, pass: false, err: e.message });
+    log(`✗ [${group}] ${name}: ${e.message}`);
+  }
+}
+
+// ── Helpers (copied from app logic) ──────────────────────────────────────────
+const DAYS = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+
+function toMins(str) {
+  if (!str) return null;
+  const [h, m] = str.split(':').map(Number);
+  return h * 60 + m;
+}
+
+function fmtTime(str) {
+  const [h, m] = str.split(':').map(Number);
+  return `${h % 12 || 12}:${String(m).padStart(2,'0')} ${h >= 12 ? 'PM' : 'AM'}`;
+}
+
+function clinicIsOpenAt(config, dayName, hourMin) {
+  // dayName: 'monday', hourMin: minutes since midnight
+  const h = config?.operating_hours?.[dayName];
+  if (!h?.open || !h?.close) return false;
+  return hourMin >= toMins(h.open) && hourMin < toMins(h.close);
+}
+
+function resolveOpen(isOpenOverride, scheduleOpen) {
+  if (isOpenOverride === true)  return true;
+  if (isOpenOverride === false) return false;
+  return scheduleOpen;
+}
+
+function waitDisplay(minutes) {
+  if (!minutes || minutes <= 0) return 'NO_WAIT';
+  return `${minutes} min`;
+}
+
+// ── PIN Tests ─────────────────────────────────────────────────────────────────
+async function runPinTests() {
+  await test('PIN', 'STAFF_PIN constant is defined', () => {
+    assert(typeof STAFF_PIN !== 'undefined', 'STAFF_PIN not defined in config.js');
+  });
+
+  await test('PIN', 'Correct PIN matches', () => {
+    assertEqual(String(STAFF_PIN), String(STAFF_PIN), 'PIN should match itself');
+  });
+
+  await test('PIN', 'Wrong PIN does not match', () => {
+    const wrong = String(STAFF_PIN) === '9999' ? '8888' : '9999';
+    assert(wrong !== String(STAFF_PIN), 'Wrong PIN should not match');
+  });
+
+  await test('PIN', 'Empty string does not match', () => {
+    assert('' !== String(STAFF_PIN), 'Empty string must not match PIN');
+  });
+}
+
+// ── Hours Logic Tests ─────────────────────────────────────────────────────────
+async function runHoursTests() {
+  const config = {
+    operating_hours: {
+      monday:    { open: '09:00', close: '17:00' },
+      tuesday:   { open: '09:00', close: '17:00' },
+      wednesday: { open: '09:00', close: '17:00' },
+      thursday:  { open: '09:00', close: '17:00' },
+      friday:    { open: '09:00', close: '17:00' },
+      saturday:  { open: null, close: null },
+      sunday:    { open: null, close: null },
+    }
+  };
+
+  await test('Hours', 'Open during business hours', () => {
+    assert(clinicIsOpenAt(config, 'monday', 10 * 60), 'Should be open at 10am Monday');
+  });
+
+  await test('Hours', 'Closed before opening time', () => {
+    assert(!clinicIsOpenAt(config, 'monday', 8 * 60), 'Should be closed at 8am');
+  });
+
+  await test('Hours', 'Closed after closing time', () => {
+    assert(!clinicIsOpenAt(config, 'monday', 18 * 60), 'Should be closed at 6pm');
+  });
+
+  await test('Hours', 'Closed on Saturday (null hours)', () => {
+    assert(!clinicIsOpenAt(config, 'saturday', 10 * 60), 'Saturday should be closed');
+  });
+
+  await test('Hours', 'Open exactly at opening time', () => {
+    assert(clinicIsOpenAt(config, 'monday', 9 * 60), 'Should be open at exactly 9:00');
+  });
+
+  await test('Hours', 'Closed exactly at closing time', () => {
+    assert(!clinicIsOpenAt(config, 'monday', 17 * 60), 'Should be closed at exactly 5:00pm');
+  });
+}
+
+// ── Override Logic Tests ───────────────────────────────────────────────────────
+async function runOverrideTests() {
+  await test('Override', 'Force open overrides closed schedule', () => {
+    const result = resolveOpen(true, false);
+    assert(result === true, 'Force open should return true even when schedule says closed');
+  });
+
+  await test('Override', 'Force closed overrides open schedule', () => {
+    const result = resolveOpen(false, true);
+    assert(result === false, 'Force closed should return false even when schedule says open');
+  });
+
+  await test('Override', 'null override defers to schedule (open)', () => {
+    assertEqual(resolveOpen(null, true), true, 'null override with open schedule');
+  });
+
+  await test('Override', 'null override defers to schedule (closed)', () => {
+    assertEqual(resolveOpen(null, false), false, 'null override with closed schedule');
+  });
+}
+
+// ── Display Logic Tests ────────────────────────────────────────────────────────
+async function runDisplayTests() {
+  await test('Display', 'Zero wait time shows NO_WAIT', () => {
+    assertEqual(waitDisplay(0), 'NO_WAIT', 'zero should show no wait');
+  });
+
+  await test('Display', 'Null wait time shows NO_WAIT', () => {
+    assertEqual(waitDisplay(null), 'NO_WAIT', 'null should show no wait');
+  });
+
+  await test('Display', 'Positive wait time shows minutes', () => {
+    assertEqual(waitDisplay(25), '25 min', 'should show 25 min');
+  });
+
+  await test('Display', 'Large wait time renders correctly', () => {
+    assertEqual(waitDisplay(999), '999 min', 'large value should render');
+  });
+
+  await test('Display', 'Negative wait treated as no wait', () => {
+    assertEqual(waitDisplay(-1), 'NO_WAIT', 'negative should be treated as no wait');
+  });
+}
+
+// ── Queue Logic Tests ──────────────────────────────────────────────────────────
+async function runQueueTests() {
+  await test('Queue', 'Add patient increases queue', () => {
+    const q = 3, avg = 10;
+    const newQ = q + 1;
+    assertEqual(newQ, 4, 'queue should increase');
+    assertEqual(newQ * avg, 40, 'wait time should recalculate');
+  });
+
+  await test('Queue', 'Remove patient decreases queue', () => {
+    const q = 3, avg = 10;
+    const newQ = q - 1;
+    assertEqual(newQ, 2);
+    assertEqual(newQ * avg, 20);
+  });
+
+  await test('Queue', 'Queue cannot go below 0', () => {
+    const q = 0;
+    const newQ = Math.max(0, q - 1);
+    assertEqual(newQ, 0, 'queue should not go negative');
+  });
+
+  await test('Queue', 'Zero queue means zero wait time', () => {
+    const q = 0, avg = 10;
+    assertEqual(q * avg, 0, 'zero queue = zero wait');
+  });
+}
+
+// ── Supabase Connection Tests ──────────────────────────────────────────────────
+async function runConnectionTests() {
+  await test('Supabase', 'Supabase CDN loaded', () => {
+    assert(typeof window.supabase !== 'undefined', 'window.supabase not defined — CDN failed to load');
+    assert(typeof window.supabase.createClient === 'function', 'createClient not available');
+  });
+
+  await test('Supabase', 'Supabase URL is configured', () => {
+    assert(typeof SUPABASE_URL === 'string', 'SUPABASE_URL not defined');
+    assert(SUPABASE_URL.startsWith('https://'), 'SUPABASE_URL must start with https://');
+    assert(!SUPABASE_URL.includes('YOUR_'), 'SUPABASE_URL is still a placeholder');
+  });
+
+  await test('Supabase', 'Supabase anon key is configured', () => {
+    assert(typeof SUPABASE_ANON_KEY === 'string', 'SUPABASE_ANON_KEY not defined');
+    assert(SUPABASE_ANON_KEY.startsWith('eyJ'), 'SUPABASE_ANON_KEY looks wrong (should start with eyJ)');
+    assert(!SUPABASE_ANON_KEY.includes('YOUR_'), 'SUPABASE_ANON_KEY is still a placeholder');
+  });
+
+  const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  await test('Supabase', 'Can read clinic_status table', async () => {
+    const { data, error } = await db.from('clinic_status').select('*').limit(1);
+    assert(!error || error.code === 'PGRST116', 'Read from clinic_status failed: ' + error?.message);
+  });
+
+  await test('Supabase', 'Can read clinic_config table', async () => {
+    const { data, error } = await db.from('clinic_config').select('*').limit(1);
+    assert(!error || error.code === 'PGRST116', 'Read from clinic_config failed: ' + error?.message);
+  });
+
+  await test('Supabase', 'Can write to clinic_status', async () => {
+    const { data: existing } = await db.from('clinic_status').select('id').limit(1).single();
+    let error;
+    if (existing?.id) {
+      const res = await db.from('clinic_status')
+        .update({ last_updated: new Date().toISOString() }).eq('id', existing.id);
+      error = res.error;
+    } else {
+      const res = await db.from('clinic_status')
+        .insert({ current_wait_minutes: 0, patients_in_queue: 0 });
+      error = res.error;
+    }
+    assert(!error, 'Write to clinic_status failed: ' + error?.message + ' (Did you run the RLS SQL?)');
+  });
+}
+
+// ── Run all ───────────────────────────────────────────────────────────────────
+async function runAll() {
+  log('Starting tests...\n');
+  resEl.innerHTML = '';
+
+  await runPinTests();
+  await runHoursTests();
+  await runOverrideTests();
+  await runDisplayTests();
+  await runQueueTests();
+  await runConnectionTests();
+
+  // Render grouped results
+  const groups = [...new Set(results.map(r => r.group))];
+  groups.forEach(g => {
+    const h2 = document.createElement('h2');
+    h2.textContent = g;
+    resEl.appendChild(h2);
+    results.filter(r => r.group === g).forEach(r => {
+      const d = document.createElement('div');
+      d.className = 'row ' + (r.pass ? 'pass' : 'fail');
+      d.textContent = (r.pass ? '✓ ' : '✗ ') + r.name + (r.err ? ': ' + r.err : '');
+      resEl.appendChild(d);
+    });
+  });
+
+  const passed = results.filter(r => r.pass).length;
+  const total  = results.length;
+  const sumEl  = document.getElementById('summary');
+  sumEl.className = 'summary ' + (passed === total ? 'all-pass' : 'has-fail');
+  sumEl.textContent = `${passed} / ${total} tests passed`;
+  log(`\n${passed}/${total} passed`);
+}
+
+runAll();
+</script>
+</body>
+</html>

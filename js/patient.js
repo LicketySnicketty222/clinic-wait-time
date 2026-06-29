@@ -1,62 +1,69 @@
-let clinicConfig = null;
-let realtimeChannel = null;
+let clinicConfig  = null;
+let pollInterval  = null;
 let hoursInterval = null;
 
 const els = {
-  card: document.getElementById('wait-card'),
+  card:        document.getElementById('wait-card'),
   waitMinutes: document.getElementById('wait-minutes'),
-  waitLabel: document.getElementById('wait-label'),
-  noWait: document.getElementById('no-wait'),
-  closedBanner: document.getElementById('closed-banner'),
-  closedMsg: document.getElementById('closed-msg'),
+  waitLabel:   document.getElementById('wait-label'),
+  noWait:      document.getElementById('no-wait'),
+  loading:     document.getElementById('wait-loading'),
+  closedBanner:document.getElementById('closed-banner'),
+  closedMsg:   document.getElementById('closed-msg'),
   lastUpdated: document.getElementById('last-updated'),
-  clinicName: document.getElementById('clinic-name'),
+  clinicName:  document.getElementById('clinic-name'),
 };
 
 async function init() {
-  const { data, error } = await db
-    .from('clinic_config')
-    .select('*')
-    .single();
+  const { data } = await db.from('clinic_config').select('*').single();
 
-  if (error || !data) {
-    showWaitTime({ current_wait_minutes: 0 });
-    return;
-  }
-
-  clinicConfig = data;
-  if (els.clinicName && data.clinic_name) {
-    els.clinicName.textContent = data.clinic_name;
-    document.title = data.clinic_name + ' — Wait Time';
+  if (data) {
+    clinicConfig = data;
+    if (els.clinicName && data.clinic_name) {
+      els.clinicName.textContent = data.clinic_name;
+      document.title = data.clinic_name + ' — Wait Time';
+    }
   }
 
   applyHoursCheck();
   hoursInterval = setInterval(applyHoursCheck, 60_000);
 }
 
-function applyHoursCheck() {
-  const open = isClinicOpen(clinicConfig);
+async function applyHoursCheck() {
+  // Fetch latest status to check is_open_override
+  const { data: status } = await db
+    .from('clinic_status')
+    .select('*')
+    .order('last_updated', { ascending: false })
+    .limit(1)
+    .single();
 
-  if (!open) {
+  // Determine open/closed: override takes priority over schedule
+  let isOpen;
+  if (status?.is_open_override === true) {
+    isOpen = true;
+  } else if (status?.is_open_override === false) {
+    isOpen = false;
+  } else {
+    isOpen = isClinicOpen(clinicConfig);
+  }
+
+  if (!isOpen) {
     const next = nextOpenTime(clinicConfig);
     showClosed(next);
-    if (realtimeChannel) {
-      clearInterval(realtimeChannel);
-      realtimeChannel = null;
-    }
+    if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
     return;
   }
 
   hideClosed();
+  showWaitTime(status);
 
-  if (!realtimeChannel) {
-    subscribeToStatus();
+  if (!pollInterval) {
+    pollInterval = setInterval(fetchAndShow, 30_000);
   }
-
-  fetchCurrentStatus();
 }
 
-async function fetchCurrentStatus() {
+async function fetchAndShow() {
   const { data } = await db
     .from('clinic_status')
     .select('*')
@@ -66,43 +73,38 @@ async function fetchCurrentStatus() {
   showWaitTime(data);
 }
 
-function subscribeToStatus() {
-  // Poll every 30 seconds — sufficient for wait time updates
-  realtimeChannel = setInterval(fetchCurrentStatus, 30_000);
-}
-
 function showWaitTime(row) {
+  if (els.loading) els.loading.style.display = 'none';
+
   const minutes = row?.current_wait_minutes ?? 0;
 
   if (minutes <= 0) {
     els.waitMinutes.style.display = 'none';
-    els.waitLabel.style.display = 'none';
-    els.noWait.style.display = 'block';
+    els.waitLabel.style.display   = 'none';
+    els.noWait.style.display      = 'block';
   } else {
-    els.waitMinutes.textContent = minutes;
+    els.waitMinutes.textContent   = minutes;
     els.waitMinutes.style.display = 'block';
-    els.waitLabel.style.display = 'block';
-    els.noWait.style.display = 'none';
+    els.waitLabel.style.display   = 'block';
+    els.noWait.style.display      = 'none';
   }
 
   if (row?.last_updated && els.lastUpdated) {
     const d = new Date(row.last_updated);
-    els.lastUpdated.textContent =
-      'Updated ' +
-      d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    els.lastUpdated.textContent = 'Updated ' + d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
   }
 }
 
 function showClosed(nextOpen) {
-  els.card.style.display = 'none';
+  els.card.style.display         = 'none';
   els.closedBanner.style.display = 'flex';
-  els.closedMsg.textContent = nextOpen
+  els.closedMsg.textContent      = nextOpen
     ? `Clinic is currently closed. Opens at ${nextOpen}.`
     : 'Clinic is currently closed.';
 }
 
 function hideClosed() {
-  els.card.style.display = 'flex';
+  els.card.style.display         = 'flex';
   els.closedBanner.style.display = 'none';
 }
 

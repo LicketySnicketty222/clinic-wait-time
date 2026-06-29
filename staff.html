@@ -363,7 +363,8 @@
       pollTimer = setInterval(loadStatus, 15_000);
     }
 
-    function showDbError() {
+    function showDbError(msg) {
+      dbError.textContent = msg || 'Cannot reach the database. Check your internet connection.';
       dbError.style.display = 'block';
     }
 
@@ -404,21 +405,28 @@
 
     // ── Write helper ──────────────────────────────────────────────
     async function writeStatus(fields) {
-      if (!db) { showDbError(); return; }
-      try {
-        const payload = { ...fields, last_updated: new Date().toISOString() };
-        if (status.id) {
-          await db.from('clinic_status').update(payload).eq('id', status.id);
-        } else {
-          const { data } = await db.from('clinic_status').insert(payload).select().single();
-          if (data) status.id = data.id;
-        }
-        status = { ...status, ...payload };
-        renderStatus();
-      } catch (e) {
-        console.error('writeStatus:', e);
-        showDbError();
+      if (!db) { showDbError('No database connection.'); return; }
+      const payload = { ...fields, last_updated: new Date().toISOString() };
+      let err;
+
+      if (status.id) {
+        const res = await db.from('clinic_status').update(payload).eq('id', status.id);
+        err = res.error;
+      } else {
+        const res = await db.from('clinic_status').insert(payload).select().single();
+        err = res.error;
+        if (res.data) status.id = res.data.id;
       }
+
+      if (err) {
+        console.error('writeStatus error:', err);
+        showDbError('Write failed: ' + err.message + ' — run the RLS SQL in Supabase (see setup instructions).');
+        return;
+      }
+
+      dbError.style.display = 'none';
+      status = { ...status, ...payload };
+      renderStatus();
     }
 
     // ── Tally ─────────────────────────────────────────────────────

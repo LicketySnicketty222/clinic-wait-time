@@ -212,6 +212,16 @@ input:focus {
   border-color: var(--color-primary);
 }
 
+.staff-link {
+  display: inline-block;
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--color-muted);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+.staff-link:hover { border-bottom-color: var(--color-muted); }
+
 /* ── Responsive ──────────────────────────────────────────────────────────────── */
 @media (max-width: 480px) {
   .wait-number { font-size: 4.5rem; }

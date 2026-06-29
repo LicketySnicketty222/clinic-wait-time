@@ -41,7 +41,7 @@ function applyHoursCheck() {
     const next = nextOpenTime(clinicConfig);
     showClosed(next);
     if (realtimeChannel) {
-      db.removeChannel(realtimeChannel);
+      clearInterval(realtimeChannel);
       realtimeChannel = null;
     }
     return;
@@ -67,14 +67,8 @@ async function fetchCurrentStatus() {
 }
 
 function subscribeToStatus() {
-  realtimeChannel = db
-    .channel('clinic-status-patient')
-    .on(
-      'postgres_changes',
-      { event: '*', schema: 'public', table: 'clinic_status' },
-      (payload) => showWaitTime(payload.new)
-    )
-    .subscribe();
+  // Poll every 30 seconds — sufficient for wait time updates
+  realtimeChannel = setInterval(fetchCurrentStatus, 30_000);
 }
 
 function showWaitTime(row) {

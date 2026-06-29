@@ -83,17 +83,8 @@ async function refreshStatus() {
 }
 
 function subscribeToStatus() {
-  realtimeChannel = db
-    .channel('clinic-status-staff')
-    .on(
-      'postgres_changes',
-      { event: '*', schema: 'public', table: 'clinic_status' },
-      (payload) => {
-        currentStatus = payload.new;
-        renderStatus();
-      }
-    )
-    .subscribe();
+  // Poll every 15 seconds to keep staff view in sync across tabs
+  realtimeChannel = setInterval(refreshStatus, 15_000);
 }
 
 function renderStatus() {

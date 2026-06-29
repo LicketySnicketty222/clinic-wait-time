@@ -210,16 +210,18 @@
     }
 
     function clinicIsOpen(config) {
-      if (!config?.operating_hours || !config?.timezone) return true; // default open if no config
-      const { day, mins } = localTime(config.timezone);
+      if (!config?.operating_hours) return true; // no config = default open
+      const tz = config.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const { day, mins } = localTime(tz);
       const h = config.operating_hours[day];
       if (!h?.open || !h?.close) return false;
       return mins >= toMins(h.open) && mins < toMins(h.close);
     }
 
     function nextOpen(config) {
-      if (!config?.operating_hours || !config?.timezone) return null;
-      const { day, mins } = localTime(config.timezone);
+      if (!config?.operating_hours) return null;
+      const tz = config.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const { day, mins } = localTime(tz);
       const todayIdx = DAYS.indexOf(day);
       for (let i = 0; i <= 7; i++) {
         const idx  = (todayIdx + i) % 7;
@@ -305,9 +307,9 @@
       }
     }
 
-    // Run immediately, then every 30 seconds
+    // Run immediately, then every 5 seconds for near-instant staff updates
     refresh();
-    setInterval(refresh, 30_000);
+    setInterval(refresh, 5_000);
   </script>
 </body>
 </html>

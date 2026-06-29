@@ -13,7 +13,7 @@
   <section id="login-section" class="login-section">
     <div class="login-card">
       <h1>Staff Login</h1>
-      <form id="login-form">
+      <form id="login-form" onsubmit="return false;">
         <label for="staff-pin">Enter PIN</label>
         <input
           id="staff-pin"
@@ -126,8 +126,8 @@
 
   </section>
 
-  <!-- Supabase CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Supabase CDN (pinned version) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.js"></script>
 
   <!-- App scripts -->
   <script src="js/config.js"></script>

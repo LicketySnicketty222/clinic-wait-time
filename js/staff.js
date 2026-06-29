@@ -1,3 +1,9 @@
+// ── Supabase guard ────────────────────────────────────────────────────────────
+if (!db) {
+  document.body.innerHTML = '<p style="padding:2rem;color:red;font-size:1.1rem;">Unable to connect to the database. Please check your internet connection and reload.</p>';
+  throw new Error('Supabase failed to load');
+}
+
 // ── Auth (PIN-based, no Supabase Auth) ───────────────────────────────────────
 
 const loginSection = document.getElementById('login-section');

@@ -36,6 +36,12 @@
   gap: 0.75rem;
 }
 
+.login-form-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
 .login-card label {
   font-size: 0.875rem;
   font-weight: 600;

@@ -13,20 +13,18 @@
   <section id="login-section" class="login-section">
     <div class="login-card">
       <h1>Staff Login</h1>
-      <form id="login-form" onsubmit="return false;">
+      <div class="login-form-wrap">
         <label for="staff-pin">Enter PIN</label>
         <input
           id="staff-pin"
           type="password"
           inputmode="numeric"
-          pattern="[0-9]*"
           placeholder="••••"
           autocomplete="off"
-          required
         />
         <p id="login-error" class="login-error" aria-live="polite"></p>
-        <button type="submit" class="btn btn-primary btn-full">Sign In</button>
-      </form>
+        <button type="button" class="btn btn-primary btn-full" onclick="handleLogin()">Sign In</button>
+      </div>
     </div>
   </section>
 

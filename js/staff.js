@@ -10,8 +10,7 @@ const loginSection = document.getElementById('login-section');
 const dashSection  = document.getElementById('dashboard-section');
 const loginError   = document.getElementById('login-error');
 
-document.getElementById('login-form').addEventListener('submit', (e) => {
-  e.preventDefault();
+function handleLogin() {
   const entered = document.getElementById('staff-pin').value;
   if (entered === STAFF_PIN) {
     sessionStorage.setItem('staff_auth', '1');
@@ -21,6 +20,10 @@ document.getElementById('login-form').addEventListener('submit', (e) => {
     document.getElementById('staff-pin').value = '';
     document.getElementById('staff-pin').focus();
   }
+}
+
+document.getElementById('staff-pin').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') handleLogin();
 });
 
 document.getElementById('logout-btn').addEventListener('click', () => {
